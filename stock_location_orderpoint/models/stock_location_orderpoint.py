@@ -69,6 +69,8 @@ class StockLocationOrderpoint(models.Model):
         string="Preferred Route",
         domain="[('rule_ids.location_dest_id', 'in', [location_id])]",
     )
+    ensure_consistency = fields.Boolean(
+        help="Use only appliable route")
     group_id = fields.Many2one(
         "procurement.group",
         "Procurement Group",
@@ -447,6 +449,11 @@ class StockLocationOrderpoint(models.Model):
         ) in qties_to_replenish_by_orderpoint.items():
             proc_vals = orderpoint._prepare_procurement_values()
             for product, qty in qties_to_replenish:
+                # bypass products route
+                rule = product._get_rules_from_location(orderpoint.location_id)
+                if orderpoint.ensure_consistency and orderpoint.route_id not in rule.route_id:
+                    # ensure route consistency
+                    continue
                 date_planned = moves_by_location[
                     orderpoint.location_id
                 ]._get_location_orderpoint_replenishment_date(product)
