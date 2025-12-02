@@ -65,7 +65,6 @@ Known issues / Roadmap
 
 Known issues:
 
--  order points should be created manually
 -  automatic trigger not implemented
 -  min/max and multiple qty not taken in account (1)
 -  on_hand qty and forcasted qty do not take in account lots

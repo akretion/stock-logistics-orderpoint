@@ -5,7 +5,7 @@ from collections import defaultdict
 
 from dateutil import relativedelta
 
-from odoo import fields, models
+from odoo import SUPERUSER_ID, _, fields, models
 from odoo.osv import expression
 from odoo.tools import float_compare
 
@@ -32,6 +32,73 @@ class StockWarehouseOrderpoint(models.Model):
 
         res["replenish_by_lots"] = lots
         return res
+
+    def _get_orderpoint_action(self):
+        action = super()._get_orderpoint_action()
+        self._create_missing_orderpoint_by_lot()
+        return action
+
+    def _create_missing_orderpoint_by_lot(self):
+        orderpoints = self.search([["replenish_by_lot", "=", True]])
+        to_refill = orderpoints._get_qty_to_order_by_lot()
+        product_ids = orderpoints.product_id.ids
+
+        # copy pasted from super()
+        orderpoint_by_product_location = (
+            self.env["stock.warehouse.orderpoint"]
+            .with_context(active_test=False)
+            ._read_group(
+                [("id", "in", orderpoints.ids), ("product_id", "in", product_ids)],
+                ["product_id", "location_id"],
+                ["id:recordset"],
+            )
+        )
+        orderpoint_by_product_location = {
+            (product.id, location.id): orderpoint
+            for product, location, orderpoint in orderpoint_by_product_location
+        }
+        # diff: add orderpoint_to_create
+        orderpoint_to_create = set()
+        orderpoint_values_list = []
+        for (product, location_id, _lot_ids), product_qty in to_refill.items():
+            orderpoint = orderpoint_by_product_location.get((product, location_id))
+            if orderpoint:
+                orderpoint.qty_forecast += product_qty
+            # start diff:
+            # we loop on lot, so an op can be created for the first lot
+            # stop early for subsequent lots
+            elif (product, location_id) in orderpoint_to_create:
+                # op already created
+                continue
+            # end of diff:
+            else:
+                orderpoint_values = self.env[
+                    "stock.warehouse.orderpoint"
+                ]._get_orderpoint_values(product, location_id)
+                location = self.env["stock.location"].browse(location_id)
+                orderpoint_values.update(
+                    {
+                        "name": _("Replenishment Report"),
+                        "warehouse_id": location.warehouse_id.id
+                        or self.env["stock.warehouse"]
+                        .search([("company_id", "=", location.company_id.id)], limit=1)
+                        .id,
+                        "company_id": location.company_id.id,
+                    }
+                )
+                orderpoint_values_list.append(orderpoint_values)
+                # diff add in orderpoint_to_create
+                # flag op has in creation
+                orderpoint_to_create.add((product, location_id))
+
+        orderpoints = (
+            self.env["stock.warehouse.orderpoint"]
+            .with_user(SUPERUSER_ID)
+            .create(orderpoint_values_list)
+        )
+        for orderpoint in orderpoints:
+            orderpoint._set_default_route_id()
+            orderpoint.qty_multiple = orderpoint._get_qty_multiple_to_order()
 
     def _get_qty_to_order_by_lot(self):  # noqa: C901
         # copied from stock/models/stock_orderpoint.py
@@ -100,12 +167,13 @@ class StockWarehouseOrderpoint(models.Model):
         # end diff
 
         # start diff:
+        # _product_id because _ is shadowed (import)
         lots = set()
-        for _, move in moves_out.items():
+        for _product_id, move in moves_out.items():
             lots.update([m[1] for m in move])
-        for _, move in moves_in.items():
+        for _product_id, move in moves_in.items():
             lots.update([m[2] for m in move])
-        for _, quant in quants.items():
+        for _product_id, quant in quants.items():
             lots.update([q[1] for q in quant])
         # end diff
 
@@ -203,7 +271,7 @@ class StockWarehouseOrderpoint(models.Model):
         location_ids = list(location_ids)
         # diff: remove qty_by_product_loc
         # diff: add qty_by_product_loc_lot
-        qty_by_product_loc_lot, _ = (
+        qty_by_product_loc_lot, _qty_by_product_wh_lot = (
             self.env["product.product"]
             .browse(product_ids)
             ._get_quantity_in_progress_by_lot(
