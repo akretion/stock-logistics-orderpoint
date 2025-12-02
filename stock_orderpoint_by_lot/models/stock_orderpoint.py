@@ -5,7 +5,7 @@ from collections import defaultdict
 
 from dateutil import relativedelta
 
-from odoo import SUPERUSER_ID, _, api, fields, models
+from odoo import SUPERUSER_ID, _, fields, models
 from odoo.osv import expression
 from odoo.tools import float_compare
 
@@ -100,14 +100,9 @@ class StockWarehouseOrderpoint(models.Model):
             orderpoint._set_default_route_id()
             orderpoint.qty_multiple = orderpoint._get_qty_multiple_to_order()
 
-    @api.depends(
-        "qty_multiple",
-        "qty_forecast",
-        "product_min_qty",
-        "product_max_qty",
-        "visibility_days",
-    )
+    # no api.depends on inherited ?
     def _compute_qty_to_order_computed(self):
+        breakpoint()
         res = super()._compute_qty_to_order_computed()
 
         # TODO: compute "correctly" qty_focasted instead
