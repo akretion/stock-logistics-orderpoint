@@ -15,8 +15,12 @@ class ProcurementGroup(models.Model):
                 # exclude product not configured
                 new_procurements.append(procurement)
                 continue
+            if procurement.values.get("restrict_lot_id", False):
+                # procurement not run from orderpoint; skip
+                new_procurements.append(procurement)
+                continue
 
-            by_lots = procurement.values.get("replenish_by_lots")
+            by_lots = procurement.values.get("replenish_by_lots", {})
             # by_lots = {lot_id: qty, lot_id2: qty}
             # if by_lots is {} it means nothing to procure
 

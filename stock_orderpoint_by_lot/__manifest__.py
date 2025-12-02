@@ -11,7 +11,6 @@
     "category": "Warehouse",
     "depends": ["purchase_lot", "stock_restrict_lot"],
     "data": [
-        "views/stock_orderpoint.xml",
         "views/product_template.xml",
     ],
     "installable": True,
