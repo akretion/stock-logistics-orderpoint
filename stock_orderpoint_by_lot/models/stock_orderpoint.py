@@ -102,7 +102,6 @@ class StockWarehouseOrderpoint(models.Model):
 
     # no api.depends on inherited ?
     def _compute_qty_to_order_computed(self):
-        breakpoint()
         res = super()._compute_qty_to_order_computed()
 
         # TODO: compute "correctly" qty_focasted instead
