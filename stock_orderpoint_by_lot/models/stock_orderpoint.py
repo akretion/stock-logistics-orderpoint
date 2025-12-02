@@ -119,7 +119,7 @@ class StockWarehouseOrderpoint(models.Model):
     ):
         self.ensure_one()
         if not self.replenish_by_lot:
-            return self.super()._get_qty_to_order(
+            return super()._get_qty_to_order(
                 force_visibility_days, qty_in_progress_by_orderpoint
             )
         qty_by_lot = self._get_qty_to_order_by_lot()
