@@ -100,7 +100,7 @@ class StockWarehouseOrderpoint(models.Model):
             orderpoint._set_default_route_id()
             orderpoint.qty_multiple = orderpoint._get_qty_multiple_to_order()
 
-    # no api.depends on inherited ?
+    # api.depends looks not needed on inherited
     def _compute_qty_to_order_computed(self):
         res = super()._compute_qty_to_order_computed()
 
@@ -119,7 +119,7 @@ class StockWarehouseOrderpoint(models.Model):
     ):
         self.ensure_one()
         if not self.replenish_by_lot:
-            return self._get_qty_to_order(
+            return self.super()._get_qty_to_order(
                 force_visibility_days, qty_in_progress_by_orderpoint
             )
         qty_by_lot = self._get_qty_to_order_by_lot()
