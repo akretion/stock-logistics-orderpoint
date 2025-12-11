@@ -122,8 +122,13 @@ class StockWarehouseOrderpoint(models.Model):
             return super()._get_qty_to_order(
                 force_visibility_days, qty_in_progress_by_orderpoint
             )
-        qty_by_lot = self._get_qty_to_order_by_lot()
-        return -1 * sum(qty_by_lot.values())
+        # filter by our product_id
+        qty_by_lot = [
+            qty
+            for prod_loc_lot, qty in self._get_qty_to_order_by_lot().items()
+            if prod_loc_lot[0] == self.product_id.id
+        ]
+        return -1 * sum(qty_by_lot)
 
     def _get_qty_to_order_by_lot(self):  # noqa: C901
         # copied from stock/models/stock_orderpoint.py

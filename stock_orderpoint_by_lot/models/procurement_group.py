@@ -20,10 +20,17 @@ class ProcurementGroup(models.Model):
                 new_procurements.append(procurement)
                 continue
 
+            if not self.env.context.get("from_orderpoint", False):
+                # procurement not run from orderpoint; skip
+                new_procurements.append(procurement)
+                continue
+
             by_lots = procurement.values.get("replenish_by_lots", {})
             # by_lots = {lot_id: qty, lot_id2: qty}
-            # if by_lots is {} it means nothing to procure
-
+            # example: {32:-2, False:-1}
+            # = lot(32) qty 2, no lot qty 1
+            # it is expected to have a mix of restricted and not
+            # restricted lots
             for lot_id, qty in by_lots.items():
                 new_procurement = self.env["procurement.group"].Procurement(
                     procurement.product_id,
@@ -35,7 +42,7 @@ class ProcurementGroup(models.Model):
                     procurement.company_id,
                     procurement.values.copy(),
                 )
-
-                new_procurement.values["restrict_lot_id"] = lot_id
+                if lot_id:
+                    new_procurement.values["restrict_lot_id"] = lot_id
                 new_procurements.append(new_procurement)
         return super().run(new_procurements, raise_user_error)
