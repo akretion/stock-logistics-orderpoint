@@ -3,7 +3,7 @@
 
 from collections import defaultdict
 
-from odoo import models
+from odoo import fields, models
 
 
 class ProductProduct(models.Model):

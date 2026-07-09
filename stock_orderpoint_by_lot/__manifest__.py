@@ -12,6 +12,7 @@
     "depends": ["purchase_lot", "stock_restrict_lot"],
     "data": [
         "views/product_template.xml",
+        "views/stock_orderpoint.xml",
     ],
     "installable": True,
 }

@@ -25,6 +25,7 @@ class StockWarehouseOrderpoint(models.Model):
     _inherit = "stock.warehouse.orderpoint"
 
     replenish_by_lot = fields.Boolean(related="product_id.replenish_by_lot")
+    lot_id = fields.Many2one(comodel_name="stock.lot")
 
     def _prepare_procurement_values(self, date=False, group=False):
         # add a replenish_by_lots in values
@@ -33,21 +34,18 @@ class StockWarehouseOrderpoint(models.Model):
         if not self.replenish_by_lot:
             # exit early
             return res
-
-        qty_by_lot = self._get_qty_to_order_by_lot()
-        lots = {}
-        # extract by location
-        for (prod, loc, lot), qty in qty_by_lot.items():
-            if prod == self.product_id.id and loc == self.location_id.id:
-                lots[lot] = qty
-
-        res["replenish_by_lots"] = lots
+        res["restrict_lot_id"] = self.lot_id.id
         return res
 
     def _get_orderpoint_action(self):
         action = super()._get_orderpoint_action()
-        # self._create_missing_orderpoint_by_lot()
+        self._create_missing_orderpoint_by_lot()
         return action
+
+    def _get_product_context(self, visibility_days=0):
+        context = super()._get_product_context()
+        context["lot_id"] = self.lot_id.id
+        return context
 
     def _create_missing_orderpoint_by_lot(self):
         orderpoints = self.search([["replenish_by_lot", "=", True]])
@@ -71,7 +69,7 @@ class StockWarehouseOrderpoint(models.Model):
         # diff: add orderpoint_to_create
         orderpoint_to_create = set()
         orderpoint_values_list = []
-        for (product, location_id, _lot_ids), product_qty in to_refill.items():
+        for (product, location_id, lot_id), product_qty in to_refill.items():
             orderpoint = orderpoint_by_product_location.get((product, location_id))
             if orderpoint:
                 orderpoint.qty_forecast += product_qty
@@ -90,6 +88,7 @@ class StockWarehouseOrderpoint(models.Model):
                 orderpoint_values.update(
                     {
                         "name": _("Replenishment Report"),
+                        "lot_id": lot_id,
                         "warehouse_id": location.warehouse_id.id
                         or self.env["stock.warehouse"]
                         .search([("company_id", "=", location.company_id.id)], limit=1)
@@ -169,6 +168,14 @@ class StockWarehouseOrderpoint(models.Model):
     #     ]
     #     return -1 * sum(qty_by_lot)
 
+    def _get_orderpoint_products(self):
+        result = super()._get_orderpoint_products()
+        if self.env.context.get("by_lot"):
+            result = result.filtered(lambda prod: prod.replenish_by_lot)
+        else:
+            result = result.filtered(lambda prod: not prod.replenish_by_lot)
+        return result
+
     def _get_qty_to_order_by_lot(self):  # noqa: C901
         # copied from stock/models/stock_orderpoint.py
         # _get_orderpoint_action
@@ -185,8 +192,10 @@ class StockWarehouseOrderpoint(models.Model):
 
         to_refill = defaultdict(float)
         # diff add filtered
-        all_product_ids = self._get_orderpoint_products().filtered(
-            lambda prod: prod.replenish_by_lot
+        all_product_ids = (
+            self.with_context(by_lot=True)
+            ._get_orderpoint_products()
+            .filtered(lambda prod: prod.replenish_by_lot)
         )
         all_replenish_location_ids = self._get_orderpoint_locations()
         ploc_per_day = defaultdict(set)
