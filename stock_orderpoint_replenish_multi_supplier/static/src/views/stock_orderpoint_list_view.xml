@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<templates id="template" xml:space="preserve">
+
+    <t t-name="stock_multi_replenish.StockOrderpoint.listView" t-inherit="stock.StockOrderpoint.listView" t-inherit-mode="extension">
+        <xpath expr="//t[@t-set-slot='content']" position="inside">
+            <DropdownItem t-if="nbSelected" onSelected="() => this.onClickOrderWithSupplier(false)">
+                Order with supplier choice
+            </DropdownItem>
+        </xpath>
+    </t>
+
+</templates>

@@ -1,0 +1,43 @@
+<?xml version='1.0' encoding='utf-8'?>
+<odoo>
+    <!-- multi.supplier.replenish form view -->
+    <record id="multi_supplier_replenish_view_form" model="ir.ui.view">
+        <field name="name">multi.supplier.replenish.view.form</field>
+        <field name="model">multi.supplier.replenish</field>
+        <field name="arch" type="xml">
+            <form string="">
+                <sheet>
+                    <group>
+                        <field name="product_replenish_ids" nolabel="1" colspan="2">
+                            <list editable="bottom">
+                                <field name="quantity" />
+                                <field name="product_uom_id"
+                                    domain="[('category_id', '=', product_uom_category_id)]"
+                                    groups="uom.group_uom"
+                                    options="{'no_open': 1, 'no_create': 1}" />
+                                <field name="date_planned" />
+                                <field
+                                    name="warehouse_id" />
+                                <field name="route_id" />
+                                <field name="supplier_id"
+                                    required="show_vendor"
+                                    domain="[('product_tmpl_id', '=', product_tmpl_id)]"
+                                    options="{'no_open': 1, 'no_create': 1}" />
+                            </list>
+                        </field>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="action_multi_supplier_replenish" model="ir.actions.act_window">
+        <field name="name">Low on stock? Let's replenish.</field>
+        <field name="res_model">multi.supplier.replenish</field>
+        <!-- binding_model_id evaluated to False
+        to remove it in existing db's as it was bug-prone -->
+        <field name="binding_model_id" eval="False" />
+        <field name="view_mode">form</field>
+        <field name="view_id" ref="multi_supplier_replenish_view_form" />
+        <field name="target">new</field>
+    </record>
+</odoo>
