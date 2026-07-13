@@ -110,64 +110,6 @@ class StockWarehouseOrderpoint(models.Model):
             orderpoint._set_default_route_id()
             orderpoint.qty_multiple = orderpoint._get_qty_multiple_to_order()
 
-    # EDIT(franz): This is a version of _compute_qty_to_order_computed
-    # That does not tank the performance of the stock.orderpoint list view
-    # in the old method calling _get_qty_to_order for each orderpoint
-    # was calling _get_qty_to_order_by_lot which compute read all the move
-    # and quant from the db which is prohibitively slow (0.2s) * the number of
-    # orderpoint
-    # # api.depends looks not needed on inherited
-    # def _compute_qty_to_order_computed(self):
-    #     # TODO: compute "correctly" qty_focasted instead
-    #     orderpoints_by_lot = self.filtered(lambda o: o.replenish_by_lot)
-    #
-    #     orderpoint_no_lot = self - orderpoints_by_lot
-    #     res = super(
-    #         StockWarehouseOrderpoint, orderpoint_no_lot
-    #     )._compute_qty_to_order_computed()
-    #
-    #     qty_by_lot = orderpoints_by_lot._get_qty_to_order_by_lot()
-    #     for orderpoint in orderpoints_by_lot:
-    #         sum_qty = 0
-    #         for prod_loc_lot, qty in qty_by_lot.items():
-    #             if prod_loc_lot[0] == orderpoint.product_id.id:
-    #                 sum_qty += qty
-    #             else:
-    #                 orderpoint.qty_to_order_computed = False
-    #                 breakpoint()
-    #         orderpoint.qty_to_order_computed = -1 * sum_qty
-    #     return res
-
-    # # api.depends looks not needed on inherited
-    # def _compute_qty_to_order_computed(self):
-    #     res = super()._compute_qty_to_order_computed()
-    #
-    #     # TODO: compute "correctly" qty_focasted instead
-    #     orderpoints = self.filtered(lambda o: o.replenish_by_lot)
-    #
-    #     qty_in_progress_by_orderpoint = orderpoints._quantity_in_progress()
-    #     for orderpoint in orderpoints:
-    #         orderpoint.qty_to_order_computed = orderpoint._get_qty_to_order(
-    #             qty_in_progress_by_orderpoint=qty_in_progress_by_orderpoint
-    #         )
-    #     return res
-    #
-    # def _get_qty_to_order(
-    #     self, force_visibility_days=False, qty_in_progress_by_orderpoint=None
-    # ):
-    #     self.ensure_one()
-    #     if not self.replenish_by_lot:
-    #         return super()._get_qty_to_order(
-    #             force_visibility_days, qty_in_progress_by_orderpoint
-    #         )
-    #     # filter by our product_id
-    #     qty_by_lot = [
-    #         qty
-    #         for prod_loc_lot, qty in self._get_qty_to_order_by_lot().items()
-    #         if prod_loc_lot[0] == self.product_id.id
-    #     ]
-    #     return -1 * sum(qty_by_lot)
-
     def _get_orderpoint_products(self):
         result = super()._get_orderpoint_products()
         if self.env.context.get("by_lot"):
