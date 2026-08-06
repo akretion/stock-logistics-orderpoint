@@ -1,0 +1,17 @@
+<?xml version='1.0' encoding='utf-8'?>
+<odoo>
+
+    <!-- product.replenish inherit form view -->
+    <record id="product_replenish" model="ir.ui.view">
+        <field name="name">product.replenish.inherit.view.form</field>
+        <field name="model">product.replenish</field>
+        <field name="inherit_id" ref="stock.view_product_replenish" />
+        <field name="arch" type="xml">
+            <!-- Add your xpath here -->
+            <field name="date_planned" position="after">
+                <field name="lot_id" invisible="not lot_id" />
+            </field>
+        </field>
+    </record>
+
+</odoo>

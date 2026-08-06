@@ -8,11 +8,14 @@
     "version": "18.0.1.0.0",
     "data": [
         "wizard/multi_supplier_replenish.xml",
+        "views/product_views.xml",
+        "views/product_replenish_views.xml",
         "security/ir.model.access.csv",
     ],
     "depends": [
         "stock",
         "purchase_stock",
+        "stock_orderpoint_by_lot",
     ],
     "assets": {
         "web.assets_backend": [

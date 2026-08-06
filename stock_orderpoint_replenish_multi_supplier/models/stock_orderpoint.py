@@ -19,8 +19,9 @@ class StockWarehouseOrderpoint(models.Model):
         wizard = self.env["multi.supplier.replenish"].create(
             [
                 {
-                    "product_ids": [
-                        o.product_id.id for o in orderpoint_multiple_supplier_no_choice
+                    "product_ids_lot_ids": [
+                        (o.product_id.id, o.lot_id.id)
+                        for o in orderpoint_multiple_supplier_no_choice
                     ],
                     "product_replenish_ids": [],
                 },

@@ -5,11 +5,12 @@
         <field name="name">multi.supplier.replenish.view.form</field>
         <field name="model">multi.supplier.replenish</field>
         <field name="arch" type="xml">
-            <form string="">
+            <form string="Replenish wizard">
                 <sheet>
                     <group>
                         <field name="product_replenish_ids" nolabel="1" colspan="2">
-                            <list editable="bottom">
+                            <list editable="bottom" create="false">
+                                <field name="product_id" />
                                 <field name="quantity" />
                                 <field name="product_uom_id"
                                     domain="[('category_id', '=', product_uom_category_id)]"
@@ -19,6 +20,7 @@
                                 <field
                                     name="warehouse_id" />
                                 <field name="route_id" />
+                                <field name="lot_id" />
                                 <field name="supplier_id"
                                     required="show_vendor"
                                     domain="[('product_tmpl_id', '=', product_tmpl_id)]"
@@ -27,6 +29,16 @@
                         </field>
                     </group>
                 </sheet>
+                <footer>
+                    <button name="launch_replenishment"
+                        string="Confirm"
+                        type="object"
+                        data-hotkey="q"
+                        class="btn-primary" />
+                    <button string="Discard"
+                        class="btn-secondary"
+                        special="cancel" data-hotkey="x" />
+                </footer>
             </form>
         </field>
     </record>
