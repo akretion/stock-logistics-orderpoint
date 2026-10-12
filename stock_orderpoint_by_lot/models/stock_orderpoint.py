@@ -27,6 +27,14 @@ class StockWarehouseOrderpoint(models.Model):
     replenish_by_lot = fields.Boolean(related="product_id.replenish_by_lot")
     lot_id = fields.Many2one(comodel_name="stock.lot")
 
+    _sql_constraints = [
+        (
+            "product_location_check",
+            "unique (product_id, location_id, lot_id, company_id)",
+            "A replenishment rule already exists for this product on this location.",
+        ),
+    ]
+
     def _prepare_procurement_values(self, date=False, group=False):
         # add a replenish_by_lots in values
         # like { lot1: qty1, lot5: qty2}
@@ -43,8 +51,9 @@ class StockWarehouseOrderpoint(models.Model):
         return action
 
     def _get_product_context(self, visibility_days=0):
-        context = super()._get_product_context()
-        context["lot_id"] = self.lot_id.id
+        context = super()._get_product_context(visibility_days=visibility_days)
+        if self.replenish_by_lot:
+            context["lot_id"] = self.lot_id.id
         return context
 
     def _create_missing_orderpoint_by_lot(self):
@@ -52,31 +61,33 @@ class StockWarehouseOrderpoint(models.Model):
         to_refill = orderpoints._get_qty_to_order_by_lot()
         product_ids = orderpoints.product_id.ids
 
-        # copy pasted from super()
-        orderpoint_by_product_location = (
+        orderpoint_by_product_location_lot = (
             self.env["stock.warehouse.orderpoint"]
             .with_context(active_test=False)
             ._read_group(
                 [("id", "in", orderpoints.ids), ("product_id", "in", product_ids)],
-                ["product_id", "location_id"],
+                ["product_id", "location_id", "lot_id"],
                 ["id:recordset"],
             )
         )
-        orderpoint_by_product_location = {
-            (product.id, location.id): orderpoint
-            for product, location, orderpoint in orderpoint_by_product_location
+        orderpoint_by_product_location_lot = {
+            (product.id, location.id, lot.id): orderpoint
+            for product, location, lot, orderpoint in orderpoint_by_product_location_lot
         }
         # diff: add orderpoint_to_create
         orderpoint_to_create = set()
         orderpoint_values_list = []
-        for (product, location_id, lot_id), product_qty in to_refill.items():
-            orderpoint = orderpoint_by_product_location.get((product, location_id))
-            if orderpoint:
-                orderpoint.qty_forecast += product_qty
+        for product, location_id, lot_id in to_refill:
             # start diff:
             # we loop on lot, so an op can be created for the first lot
             # stop early for subsequent lots
-            elif (product, location_id) in orderpoint_to_create:
+            if (
+                product,
+                location_id,
+                lot_id,
+            ) in orderpoint_to_create or orderpoint_by_product_location_lot.get(
+                (product, location_id, lot_id)
+            ):
                 # op already created
                 continue
             # end of diff:
@@ -99,7 +110,7 @@ class StockWarehouseOrderpoint(models.Model):
                 orderpoint_values_list.append(orderpoint_values)
                 # diff add in orderpoint_to_create
                 # flag op has in creation
-                orderpoint_to_create.add((product, location_id))
+                orderpoint_to_create.add((product, location_id, lot_id))
 
         orderpoints = (
             self.env["stock.warehouse.orderpoint"]
