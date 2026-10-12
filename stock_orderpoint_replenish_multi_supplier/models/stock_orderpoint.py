@@ -1,6 +1,7 @@
 # Copyright 2025 Akretion France (https://www.akretion.com/)
 # @author: Raphaël Reverdy <raphael.reverdy@akretion.com>
 from odoo import _, models
+from odoo.exceptions import UserError
 
 
 class StockWarehouseOrderpoint(models.Model):
@@ -16,6 +17,9 @@ class StockWarehouseOrderpoint(models.Model):
             force_to_max
         )
 
+        if len(self.mapped("warehouse_id")) > 1:
+            raise UserError("Cannot ressuply with supplier into multiple warehouses")
+
         wizard = self.env["multi.supplier.replenish"].create(
             [
                 {
@@ -23,7 +27,9 @@ class StockWarehouseOrderpoint(models.Model):
                         (o.product_id.id, o.lot_id.id)
                         for o in orderpoint_multiple_supplier_no_choice
                     ],
+                    "warehouse_id": self.warehouse_id.id,
                     "product_replenish_ids": [],
+                    "company_id": self.env.company.id,
                 },
             ]
         )
