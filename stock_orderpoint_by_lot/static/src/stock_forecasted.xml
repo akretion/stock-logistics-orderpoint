@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="stock_orderpoint_by_lot.Forecasted"
+       t-inherit="stock.Forecasted" t-inherit-mode="extension">
+        <xpath expr="//ForecastedWarehouseFilter" position="after">
+            <SelectMenu t-if="docs.lot_filter_enabled"
+                        choices="forecastLotChoices"
+                        value="forecastLotValue"
+                        required="true"
+                        autoSort="false"
+                        class="'o_forecasted_lot_filter ms-1'"
+                        onSelect.bind="updateForecastLot">
+                <span class="fa fa-tags me-1"/> Lot: <t t-out="forecastLotLabel"/>
+            </SelectMenu>
+        </xpath>
+        <xpath expr="//View" position="attributes">
+            <attribute name="resModel">forecastGraphModel</attribute>
+            <attribute name="context">forecastGraphContext</attribute>
+        </xpath>
+    </t>
+
+    <t t-name="stock_orderpoint_by_lot.ForecastedDetails"
+       t-inherit="stock.ForecastedDetails" t-inherit-mode="extension">
+        <!-- Append the lot after Delivery: summary rows and rows contributed by
+             sale_stock, purchase_stock and mrp keep their original quantity columns. -->
+        <xpath expr="//thead[1]/tr" position="inside">
+            <td t-if="props.docs.lot_filter_enabled">Lot</td>
+        </xpath>
+        <xpath expr="//tr[@t-foreach='props.docs.lines']" position="inside">
+            <td t-if="props.docs.lot_filter_enabled" class="o_forecasted_lot">
+                <t t-if="line.lot_id" t-out="line.lot_name"/>
+                <t t-else="">No lot</t>
+            </td>
+        </xpath>
+    </t>
+</templates>

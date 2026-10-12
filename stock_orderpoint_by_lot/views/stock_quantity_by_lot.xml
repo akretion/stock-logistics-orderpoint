@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="stock_quantity_by_lot_graph" model="ir.ui.view">
+        <field name="name">stock.quantity.by.lot.graph</field>
+        <field name="model">report.stock.quantity.by.lot</field>
+        <field name="arch" type="xml">
+            <graph
+                js_class="stock_forecasted_by_lot_graph"
+                string="Forecasted Stock by Lot"
+                type="line"
+                stacked="0"
+                disable_linking="1"
+            >
+                <field name="date" interval="day" />
+                <field name="lot_id" />
+                <field name="product_qty" type="measure" />
+            </graph>
+        </field>
+    </record>
+</odoo>

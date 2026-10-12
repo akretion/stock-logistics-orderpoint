@@ -56,6 +56,12 @@ class StockWarehouseOrderpoint(models.Model):
             context["lot_id"] = self.lot_id.id
         return context
 
+    def action_product_forecast_report(self):
+        action = super().action_product_forecast_report()
+        if self.replenish_by_lot:
+            action["context"]["lot_id"] = self.lot_id.id
+        return action
+
     def _create_missing_orderpoint_by_lot(self):
         orderpoints = self.search([["replenish_by_lot", "=", True]])
         to_refill = orderpoints._get_qty_to_order_by_lot()
