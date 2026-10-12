@@ -10,11 +10,16 @@ class ProductTemplate(models.Model):
         product_ids_lot_ids = MultiSupplier.get_product_ids_and_lot_from_product(
             product_tmpl_id=self
         )
+        company = self.company_id or self.env.company
+        warehouse = self.env["stock.warehouse"].search(
+            [("company_id", "=", company.id)], limit=1
+        )
 
         wizard = self.env["multi.supplier.replenish"].create(
             [
                 {
                     "product_ids_lot_ids": product_ids_lot_ids,
+                    "warehouse_id": warehouse.id,
                     "product_replenish_ids": [],
                 },
             ]
@@ -32,10 +37,15 @@ class ProductProduct(models.Model):
             product_id=self
         )
 
+        company = self.product_tmpl_id.company_id or self.env.company
+        warehouse = self.env["stock.warehouse"].search(
+            [("company_id", "=", company.id)], limit=1
+        )
         wizard = self.env["multi.supplier.replenish"].create(
             [
                 {
                     "product_ids_lot_ids": product_ids_lot_ids,
+                    "warehouse_id": warehouse.id,
                     "product_replenish_ids": [],
                 },
             ]
